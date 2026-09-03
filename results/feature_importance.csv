@@ -1,0 +1,13 @@
+Feature,Importance
+Distance_to_River,0.503
+Half-basins,0.128
+Basins,0.118
+Precipitation,0.090
+Flow_Accumulation,0.056
+Stream_Power_Index,0.041
+Topographic_Wetness_Index,0.035
+Flow_Direction,0.011
+Stream_Segments,0.007
+Slope_Length,0.006
+Slope_Steepness,0.003
+Drainage_Direction,0.000

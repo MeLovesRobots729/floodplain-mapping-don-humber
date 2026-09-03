@@ -1,0 +1,23 @@
+Data Sources for Floodplain Mapping Project
+
+1. NASADEM 30m Digital Elevation Model
+   - Source: NASA EOSDIS Land Processes DAAC
+   - DOI: 10.5069/G93T9FD9
+   - URL: https://doi.org/10.5069/G93T9FD9
+
+2. TRCA Floodplain Data
+   - Source: Toronto and Region Conservation Authority Open Data Portal
+   - URL: https://trca-camaps.opendata.arcgis.com/datasets/50ee80b4a2dc4d3ebfb71a2fc33d597a_1/explore?location=43.726839%2C-79.495866%2C12
+
+3. TRCA Precipitation Data
+   - Source: Toronto and Region Conservation Authority Open Data Portal
+   - URL: https://data.trca.ca/dataset/precipitation
+
+4. TRCA River Network
+   - Source: Toronto and Region Conservation Authority Open Data Portal
+   - URL:https://trca-camaps.opendata.arcgis.com/datasets/162daaab43b744e5b80a2d77b882df8a_0/explore?location=43.660600%2C-79.220341%2C9
+
+5. TRCA Watershed Boundaries
+   - Source: Toronto and Region Conservation Authority Open Data Portal
+   - URL:https://trca-camaps.opendata.arcgis.com/datasets/dd30e4650f38495399801deb2ea33aa6_0/explore?location=43.733964%2C-79.479766%2C11
+

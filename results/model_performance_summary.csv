@@ -1,0 +1,7 @@
+Metric,Don_River,Humber_River
+ROC-AUC,0.986,0.802
+Accuracy,0.933,0.875
+Floodplain_Recall,0.950,0.509
+Floodplain_Precision,0.500,0.261
+F1_Score,0.61,0.345
+Optimal_Threshold,0.5,0.12
