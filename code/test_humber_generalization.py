@@ -8,15 +8,21 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 from matplotlib.patches import Patch
 
-# ----- Paths -----
-humber_dir = Path("/Users/alexanderzhang/Desktop/realignedreastershumberformodel")
-don_dir = Path("/Users/alexanderzhang/Desktop/PersonalProject/normalized rasters")
+# Import paths from central configuration
+from paths import (
+    HUMBER_RASTER_DIR,
+    DON_RASTER_DIR,
+    RESULTS_DIR,
+    FIGURES_DIR,
+    HUMBER_TARGET_FILE
+)
 
-# ----- 1. Load the trained Don River model -----
-model_path = don_dir / "random_forest_model.pkl"
+# ----- Load the trained Don River model -----
+model_path = RESULTS_DIR / "random_forest_model.pkl"
 
 if not model_path.exists():
     print(f"❌ Model not found at: {model_path}")
+    print("   Please save your trained Don River model first.")
     exit()
 
 with open(model_path, 'rb') as f:
@@ -24,29 +30,29 @@ with open(model_path, 'rb') as f:
 
 print("✅ Loaded trained Don River model")
 
-# ----- 2. Humber features (SAME ORDER as Don model) -----
+# ----- Humber features (in the SAME ORDER as Don model) -----
 feature_files = [
-    "basins_realign.tif",
-    "drainage_realign.tif",
-    "flowaccum_realign.tif",
-    "flowdir_realign.tif",
-    "half-basins_realign.tif",
-    "lengthsteepness_realign.tif",
-    "steepness_realign.tif",
-    "spi_realign.tif",
-    "streanseg_realign.tif",
-    "topographic_realign.tif",
-    "proximity_realign.tif",
-    "precip_realign.tif"
+    "basins_realign.tif",           # 1 - categorical
+    "drainage_realign.tif",      # 2 - categorical
+    "flowaccum_realign.tif",   # 3 - continuous
+    "flowdir_realign.tif",          # 4 - categorical
+    "half-basins_realign.tif",       # 5 - categorical
+    "lengthsteepness_realign.tif", # 6 - continuous
+    "steepness_realign.tif", # 7 - continuous
+    "spi_realign.tif",         # 8 - continuous
+    "streanseg_realign.tif",       # 9 - categorical
+    "topographic_realign.tif",         # 10 - continuous
+    "proximity_realign.tif",    # 11 - continuous
+    "precip_realign.tif" # 12 - continuous
 ]
 
-# ----- 3. Load Humber features -----
+# ----- Load Humber features -----
 print("\n📊 Loading Humber features:")
 feature_arrays = []
 src_ref = None
 
 for fpath in feature_files:
-    full_path = humber_dir / fpath
+    full_path = HUMBER_RASTER_DIR / fpath
     if not full_path.exists():
         print(f"   ❌ File not found: {fpath}")
         exit()
@@ -62,8 +68,8 @@ features_stack = np.stack(feature_arrays, axis=0)
 height, width = features_stack.shape[1], features_stack.shape[2]
 print(f"\n✅ Features stack shape: {features_stack.shape}")
 
-# ----- 4. Load Humber target (TRCA floodplain) -----
-target_path = humber_dir / "floodplain_raster_humber2.tif"
+# ----- Load Humber target (TRCA floodplain) -----
+target_path = HUMBER_RASTER_DIR / "floodplain_raster_humber2.tif"
 
 if not target_path.exists():
     print(f"\n❌ Target file not found: {target_path}")
@@ -73,9 +79,9 @@ with rasterio.open(target_path) as src:
     target = src.read(1).astype(np.float32)
     meta = src.meta
 
-print(f"\n✅ Target raster shape: {target.shape}")
+print(f"✅ Target raster shape: {target.shape}")
 
-# ----- 5. Prepare data -----
+# ----- Prepare data -----
 n_features, height, width = features_stack.shape
 X = features_stack.reshape(n_features, height * width).T
 y = target.flatten()
@@ -91,37 +97,34 @@ y_clean = y[valid_mask]
 
 print(f"\n✅ Valid pixels: {len(X_clean):,}")
 
-# ----- 6. Make predictions -----
+# ----- Make predictions -----
 print("\n🔮 Making predictions on Humber River...")
+y_pred = model.predict(X_clean)
 y_pred_proba = model.predict_proba(X_clean)[:, 1]
 
-# ----- 7. Apply the best threshold (0.12) -----
-best_threshold = 0.12
-y_pred_binary = (y_pred_proba >= best_threshold).astype(int)
-
-# ----- 8. Evaluate with the best threshold -----
-accuracy = accuracy_score(y_clean, y_pred_binary)
+# ----- Evaluate -----
+accuracy = accuracy_score(y_clean, y_pred)
 roc_auc = roc_auc_score(y_clean, y_pred_proba)
 
-print("\n" + "="*60)
-print(f"HUMBER RIVER GENERALIZATION TEST (Threshold = {best_threshold})")
-print("="*60)
+print("\n" + "="*50)
+print("HUMBER RIVER GENERALIZATION TEST RESULTS")
+print("="*50)
 print(f"Accuracy: {accuracy:.4f}")
 print(f"ROC-AUC Score: {roc_auc:.4f}")
 print("\nClassification Report:")
-print(classification_report(y_clean, y_pred_binary, target_names=['Non-Floodplain', 'Floodplain']))
+print(classification_report(y_clean, y_pred, target_names=['Non-Floodplain', 'Floodplain']))
 
-cm = confusion_matrix(y_clean, y_pred_binary)
+cm = confusion_matrix(y_clean, y_pred)
 print("\nConfusion Matrix:")
 print(f"True Negatives: {cm[0,0]:,} | False Positives: {cm[0,1]:,}")
 print(f"False Negatives: {cm[1,0]:,} | True Positives: {cm[1,1]:,}")
 
-# ----- 9. Compare to Don River results -----
-print("\n" + "="*60)
-print("COMPARISON: DON vs HUMBER (Threshold Tuned)")
-print("="*60)
+# ----- Compare to Don River results -----
+print("\n" + "="*50)
+print("COMPARISON: DON vs HUMBER")
+print("="*50)
 print(f"{'Metric':<20} {'Don River':<15} {'Humber River':<15} {'Drop':<15}")
-print("-"*70)
+print("-"*65)
 
 don_accuracy = 0.9326
 don_roc_auc = 0.9859
@@ -129,7 +132,7 @@ don_roc_auc = 0.9859
 print(f"{'Accuracy':<20} {don_accuracy:<15.4f} {accuracy:<15.4f} {don_accuracy - accuracy:<15.4f}")
 print(f"{'ROC-AUC':<20} {don_roc_auc:<15.4f} {roc_auc:<15.4f} {don_roc_auc - roc_auc:<15.4f}")
 
-# ----- 10. Export predictions to raster -----
+# ----- Export predictions to raster -----
 print("\n💾 Exporting predictions...")
 
 predicted_proba_full = np.full(height * width, np.nan, dtype=np.float32)
@@ -137,26 +140,24 @@ predicted_proba_full[valid_mask] = y_pred_proba
 predicted_proba = predicted_proba_full.reshape(height, width)
 
 predicted_binary_full = np.full(height * width, np.nan, dtype=np.float32)
-predicted_binary_full[valid_mask] = y_pred_binary
+predicted_binary_full[valid_mask] = y_pred
 predicted_binary = predicted_binary_full.reshape(height, width)
 
 out_meta = meta.copy()
 out_meta.update({"dtype": "float32", "count": 1, "nodata": np.nan})
 
-prob_path = humber_dir / "predicted_floodplain_probability_humber.tif"
+prob_path = RESULTS_DIR / "predicted_floodplain_probability_humber.tif"
 with rasterio.open(prob_path, "w", **out_meta) as dst:
     dst.write(predicted_proba.astype(np.float32), 1)
 
-binary_path = humber_dir / f"predicted_floodplain_binary_humber_threshold_{best_threshold}.tif"
+binary_path = RESULTS_DIR / "predicted_floodplain_binary_humber.tif"
 with rasterio.open(binary_path, "w", **out_meta) as dst:
     dst.write(predicted_binary.astype(np.float32), 1)
 
 print(f"✅ Probability map: {prob_path}")
 print(f"✅ Binary map: {binary_path}")
 
-# ----- 11. Comparison plot -----
-print("\n📊 Creating comparison plot...")
-
+# ----- Comparison plot -----
 binary_cmap = ListedColormap(['lightgray', 'red'])
 
 plt.figure(figsize=(15, 6))
@@ -173,45 +174,25 @@ plt.axis('off')
 
 plt.subplot(1, 3, 2)
 plt.imshow(predicted_proba, cmap='RdYlBu_r', interpolation='none', vmin=0, vmax=1)
-plt.title(f'Predicted Floodplain Probability (Humber)')
+plt.title('Predicted Floodplain Probability')
 plt.colorbar(label='Probability', shrink=0.8)
 plt.axis('off')
 
 plt.subplot(1, 3, 3)
 plt.imshow(predicted_binary, cmap=binary_cmap, interpolation='none', vmin=0, vmax=1)
-plt.title(f'Predicted Binary (Threshold = {best_threshold})')
+plt.title('Predicted Binary Floodplain')
 plt.legend(handles=legend_elements, loc='lower right')
 plt.axis('off')
 
-plt.suptitle(f'Humber River: Actual vs Predicted\nAccuracy: {accuracy:.3f} | ROC-AUC: {roc_auc:.3f} | Threshold: {best_threshold}', 
+plt.suptitle(f'Humber River: Actual vs Predicted\nAccuracy: {accuracy:.3f} | ROC-AUC: {roc_auc:.3f}', 
              fontsize=14, fontweight='bold')
 plt.tight_layout()
 
-plt.savefig(humber_dir / f"humber_generalization_comparison_threshold_{best_threshold}.png", dpi=300, bbox_inches='tight')
-print(f"✅ Comparison plot saved: {humber_dir / f'humber_generalization_comparison_threshold_{best_threshold}.png'}")
-
+plt.savefig(FIGURES_DIR / "humber_generalization_comparison.png", dpi=300, bbox_inches='tight')
+print(f"✅ Comparison plot saved: {FIGURES_DIR / 'humber_generalization_comparison.png'}")
 plt.show()
 
-# ----- 12. Final Summary -----
-print("\n" + "="*60)
-print("📊 FINAL SUMMARY")
-print("="*60)
-print(f"Best Threshold:          {best_threshold}")
-print(f"Don River Accuracy:      {don_accuracy:.4f}")
-print(f"Humber River Accuracy:   {accuracy:.4f}")
-print(f"Drop in Accuracy:        {don_accuracy - accuracy:.4f}")
-print(f"\nDon River ROC-AUC:       {don_roc_auc:.4f}")
-print(f"Humber River ROC-AUC:    {roc_auc:.4f}")
-print(f"Drop in ROC-AUC:         {don_roc_auc - roc_auc:.4f}")
-print(f"\nFloodplain Detection (Humber):")
-print(f"   Precision:            {cm[1,1] / (cm[1,1] + cm[0,1]):.4f}")
-print(f"   Recall:               {cm[1,1] / (cm[1,1] + cm[1,0]):.4f}")
-print(f"   F1 Score:             {2 * (cm[1,1] / (cm[1,1] + cm[0,1])) * (cm[1,1] / (cm[1,1] + cm[1,0])) / ((cm[1,1] / (cm[1,1] + cm[0,1])) + (cm[1,1] / (cm[1,1] + cm[1,0]))):.4f}")
-
-if don_accuracy - accuracy < 0.05:
-    print("\n✅ The model generalizes well to the Humber River!")
-else:
-    print("\n⚠️ The model shows a significant drop in performance.")
-    print("   This suggests the Don River model may be overfit.")
-
-print("="*60)
+print("\n📊 DETAILED STATISTICS:")
+print("-" * 40)
+print(f"Accuracy: {accuracy:.4f}")
+print(f"ROC-AUC: {roc_auc:.4f}")

@@ -2,8 +2,11 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 
+# Import paths from central configuration
+from paths import PRECIP_DATA_DIR
+
 # Path to your downloaded CSV files
-precip_dir = Path("/Users/alexanderzhang/Desktop/RainfallDataHumber")
+precip_dir = PRECIP_DATA_DIR
 
 # List of Humber gauges with their actual file names
 gauges = [
@@ -24,18 +27,18 @@ for gauge in gauges:
     # Check if file exists
     if not file_path.exists():
         print(f"   ❌ File not found: {file_name}")
+        print(f"   Please check the file name and try again.")
         continue
     
     # Read the CSV and find the exact data start
     with open(file_path, 'r') as f:
         lines = f.readlines()
     
-    # Find the line that says "timestamp,value" (this is where the data starts)
+    # Find the line that says "timestamp,value"
     data_start_idx = None
     for i, line in enumerate(lines):
-        # Look for the exact header line
         if line.strip() == 'timestamp,value' or line.strip().startswith('timestamp,value'):
-            data_start_idx = i + 1  # Start reading from the next line
+            data_start_idx = i + 1
             break
     
     if data_start_idx is None:
@@ -44,8 +47,6 @@ for gauge in gauges:
     
     print(f"   Found data starting at row {data_start_idx + 1}")
     
-    # Read the data section starting from the found index
-    # We'll manually parse to avoid any header issues
     timestamps = []
     values = []
     
@@ -53,22 +54,16 @@ for gauge in gauges:
         line = line.strip()
         if not line:
             continue
-        
-        # Split by comma
         parts = line.split(',')
         if len(parts) >= 2:
-            # Clean up any quotes
             ts = parts[0].strip('"')
             val = parts[1].strip('"')
-            
             try:
                 values.append(float(val))
                 timestamps.append(ts)
             except ValueError:
-                # Skip rows with non-numeric values
                 continue
     
-    # Create DataFrame
     df = pd.DataFrame({
         'timestamp': timestamps,
         'value': values
@@ -82,40 +77,25 @@ for gauge in gauges:
     print(f"   First few rows:")
     print(df.head(5))
     
-    # Convert timestamp to datetime (specifying format to avoid warnings)
     try:
-        # Try the ISO format used in the file
         df['timestamp'] = pd.to_datetime(df['timestamp'], format='%Y-%m-%dT%H:%M:%S.%f%z', errors='coerce')
     except:
-        # Fallback to automatic parsing
         df['timestamp'] = pd.to_datetime(df['timestamp'], errors='coerce')
     
-    # Check for failed parsing
-    if df['timestamp'].isna().any():
-        print(f"   ⚠️ Some timestamps could not be parsed. Check format.")
-    
-    # Extract year
     df['Year'] = df['timestamp'].dt.year
-    
-    # Remove rows with missing years
     df = df.dropna(subset=['Year'])
     
     if len(df) == 0:
         print(f"   ⚠️ No valid timestamp data. Skipping...")
         continue
     
-    # Group by year and sum precipitation
     annual_totals = df.groupby('Year')['value'].sum()
-    
-    # Remove years with very low totals (likely incomplete data)
     annual_totals = annual_totals[annual_totals > 100]
     
     if len(annual_totals) == 0:
         print(f"   ⚠️ No valid years found (all totals < 100mm).")
-        print(f"   Check if the data is in mm.")
         continue
     
-    # Calculate mean annual precipitation
     mean_annual = annual_totals.mean()
     
     precip_data[gauge_id] = {
@@ -138,9 +118,6 @@ print("="*60)
 
 if len(precip_data) == 0:
     print("⚠️ No data processed successfully.")
-    print("\nTroubleshooting:")
-    print("1. Make sure the CSV files contain 'timestamp,value' as a header")
-    print("2. Check that the data has values in the second column")
 else:
     for gauge_id, data in precip_data.items():
         print(f"{data['name']} ({gauge_id}):")
