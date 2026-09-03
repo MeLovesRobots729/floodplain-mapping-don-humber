@@ -1,4 +1,3 @@
-```markdown
 # Floodplain Mapping with Random Forest
 
 This repository contains all the code and data I used for my floodplain mapping project. I trained a Random Forest model on Toronto's Don River and tested it on the Humber River to see how well it generalizes.
@@ -179,4 +178,3 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 ## Questions or Issues?
 
 If you have any questions or run into problems, feel free to open an issue on GitHub or contact me.
-```
