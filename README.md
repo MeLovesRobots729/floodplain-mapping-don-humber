@@ -161,11 +161,7 @@ This script:
 
 ---
 
-## How to Cite This
-
-If you use this code, please cite:
-
-Zhang, A. (2026). *Assessing the Generalization of Machine Learning Floodplain Models Across Watersheds*. Journal of Emerging Investigators (in review).
+Manuscript submitted to the International Journal of High School Research
 
 ---
 
