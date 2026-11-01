@@ -178,3 +178,6 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 ## Questions or Issues?
 
 If you have any questions or run into problems, feel free to open an issue on GitHub or contact me.
+
+## AI Assistance
+Parts of the Python code in this repository were written with the assistance of DeepSeek V3. All code was reviewed, tested, and modified by the author. Files containing AI-generated code are marked with a comment at the top.
