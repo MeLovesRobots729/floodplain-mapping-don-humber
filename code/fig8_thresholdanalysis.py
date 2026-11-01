@@ -1,3 +1,6 @@
+# AI assistance: this file was written with the assistance of DeepSeek V3 (2026).
+ # The code was reviewed, tested, and modified by Alexander Zhang.
+
 import matplotlib.pyplot as plt
 import numpy as np
 from paths import FIGURES_DIR
