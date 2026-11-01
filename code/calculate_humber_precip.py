@@ -1,3 +1,6 @@
+# AI assistance: this file was written with the assistance of DeepSeek V3 (2026).
+# The code was reviewed, tested, and modified by Alexander Zhang.
+
 import pandas as pd
 import numpy as np
 from pathlib import Path
